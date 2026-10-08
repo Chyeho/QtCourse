@@ -9,12 +9,13 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)
     , currentInput("0")
     , waitForOperand(false)
+    , secondOperandEntered(true)
     , hasError(false)
-    , unaryResult(0.0)
 {
     ui->setupUi(this);
     setupConnections();
     updateDisplay(currentInput);
+    updateExpression(QString());
 }
 
 MainWindow::~MainWindow()
@@ -103,6 +104,12 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         return;
     }
 
+    // 清除当前 (Ctrl+Backspace) —— 必须放在 Backspace 判断之前，否则永远不可达
+    if (key == Qt::Key_Backspace && modifiers & Qt::ControlModifier) {
+        inputClearEntry();
+        return;
+    }
+
     // 退格
     if (key == Qt::Key_Backspace) {
         inputBackspace();
@@ -112,12 +119,6 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
     // 清除全部 (Delete 或 Esc)
     if (key == Qt::Key_Delete || key == Qt::Key_Escape) {
         inputClear();
-        return;
-    }
-
-    // 清除当前 (Ctrl+Backspace)
-    if (key == Qt::Key_Backspace && modifiers & Qt::ControlModifier) {
-        inputClearEntry();
         return;
     }
 
@@ -198,6 +199,10 @@ void MainWindow::onUnaryOperatorClicked()
 }
 
 // ==================== 核心输入处理（鼠标和键盘共用） ====================
+//
+// 显示屏采用 Windows 计算器双行布局：
+//   - expressionEdit（上行，小字号）：显示历史表达式，如 "9 ×"、"9 × 9 ="
+//   - displayEdit（下行，大字号，右下角）：显示当前输入值或计算结果
 
 void MainWindow::inputDigit(const QString &digit)
 {
@@ -206,11 +211,16 @@ void MainWindow::inputDigit(const QString &digit)
         inputClear();
     }
 
-    // 刚完成计算或等待新操作数，输入数字则开始新输入
+    // 刚按过操作符/等号：输入数字则替换当前值，开始新输入
     if (waitForOperand) {
         currentInput.clear();
         waitForOperand = false;
+        // 等号后开始新计算时清空表达式行；操作符后保留表达式（如 "9 ×"）
+        if (pendingOperator.isEmpty()) {
+            updateExpression(QString());
+        }
     }
+    secondOperandEntered = true;
 
     // 避免多个前导0，如 "000" -> "0"
     if (currentInput == "0") {
@@ -230,10 +240,14 @@ void MainWindow::inputDot()
         inputClear();
     }
 
-    // 刚完成计算，输入小数点则清空并以 "0." 开始
+    // 刚按过操作符/等号：以 "0." 开始新输入
     if (waitForOperand) {
         currentInput = "0.";
         waitForOperand = false;
+        secondOperandEntered = true;
+        if (pendingOperator.isEmpty()) {
+            updateExpression(QString());
+        }
         updateDisplay(currentInput);
         return;
     }
@@ -250,57 +264,43 @@ void MainWindow::inputDot()
         currentInput += '.';
     }
 
+    secondOperandEntered = true;
     updateDisplay(currentInput);
 }
 
 void MainWindow::inputOperator(const QString &op)
 {
-    // 错误状态下先清除错误，并用0作为起点
+    // 错误状态下先清除错误，用0作为起点继续
     if (hasError) {
         inputClear();
     }
 
-    // 连续按操作符：替换操作符（连续操作符处理）
-    if (waitForOperand && !pendingOperator.isEmpty()) {
-        pendingOperator = op;
-        updateDisplay(formatNumber(firstOperand.toDouble()) + " " + pendingOperator);
-        return;
-    }
-
-    // 如果已有待计算表达式，先计算结果（连续运算）
-    if (!pendingOperator.isEmpty() && !currentInput.isEmpty()) {
+    if (!pendingOperator.isEmpty() && (!waitForOperand || secondOperandEntered)) {
+        // 已有有效表达式且当前值可用：先算出结果（连续运算），结果作为新的第一操作数
         double result;
         if (!calculate(result)) {
             return; // 计算出错（如除0）
         }
         firstOperand = QString::number(result);
         currentInput = firstOperand;
-        updateDisplay(formatNumber(result) + " " + op);
-    } else {
-        // 首次输入操作符，保存当前值为第一操作数
+        updateDisplay(formatNumber(result));
+    } else if (pendingOperator.isEmpty()) {
+        // 首次输入操作符（或等号后接操作符）：当前值即为第一操作数
         firstOperand = currentInput;
-        updateDisplay(formatNumber(firstOperand.toDouble()) + " " + op);
     }
+    // 其余情况（连续按操作符且未输入第二操作数）：仅替换操作符，firstOperand 不变
 
     pendingOperator = op;
+    // 表达式行显示第一操作数和操作符，如 "9 ×"；当前值行保持不变
+    updateExpression(formatNumber(firstOperand.toDouble()) + " " + op);
     waitForOperand = true;
+    secondOperandEntered = false;
 }
 
 void MainWindow::inputEqual()
 {
-    if (hasError) {
-        return;
-    }
-
-    // 没有待计算的操作符，直接忽略
-    if (pendingOperator.isEmpty()) {
-        return;
-    }
-
-    // 等待第二操作数时按等号，用第一操作数作为第二操作数（如 "5 + =" -> 10）
-    QString secondOperand = currentInput;
-    if (waitForOperand) {
-        secondOperand = firstOperand;
+    if (hasError || pendingOperator.isEmpty()) {
+        return; // 无待计算表达式时等号无效
     }
 
     double result;
@@ -308,30 +308,44 @@ void MainWindow::inputEqual()
         return; // 除0错误已在calculate中处理
     }
 
-    // 显示结果，并标记等待新输入（计算完成后继续输入数字会开始新计算）
+    // 表达式行显示完整等式，如 "9 × 9 ="（currentInput 为第二操作数的原始输入）
+    updateExpression(formatNumber(firstOperand.toDouble()) + " "
+                     + pendingOperator + " " + currentInput + " =");
     updateDisplay(formatNumber(result));
+
     currentInput = QString::number(result);
     firstOperand.clear();
     pendingOperator.clear();
+    // 等号后再输入数字将开始新计算；再按操作符则以结果为第一操作数
     waitForOperand = true;
+    secondOperandEntered = true;
 }
 
 void MainWindow::inputBackspace()
 {
-    // 错误状态或刚完成计算，退格等同于清除全部
-    if (hasError || waitForOperand) {
+    // 错误状态下退格等同于清除全部
+    if (hasError) {
         inputClear();
         return;
     }
 
-    // 删除最后一个字符
-    if (!currentInput.isEmpty()) {
-        currentInput.chop(1);
-    }
-
-    // 删空后显示0
-    if (currentInput.isEmpty() || currentInput == "-") {
+    if (waitForOperand && !secondOperandEntered) {
+        // 操作符后尚未输入第二操作数：当前值置0，表达式行保留（Windows 行为）
         currentInput = "0";
+        secondOperandEntered = true;
+    } else {
+        // 正常编辑：删除最后一个字符
+        if (!currentInput.isEmpty()) {
+            currentInput.chop(1);
+        }
+        if (currentInput.isEmpty() || currentInput == "-") {
+            currentInput = "0";
+        }
+        waitForOperand = false;
+        // 等号后开始编辑结果时清空表达式行
+        if (pendingOperator.isEmpty()) {
+            updateExpression(QString());
+        }
     }
 
     updateDisplay(currentInput);
@@ -344,18 +358,28 @@ void MainWindow::inputClear()
     firstOperand.clear();
     pendingOperator.clear();
     waitForOperand = false;
+    secondOperandEntered = true;
     hasError = false;
     updateDisplay(currentInput);
+    updateExpression(QString());
 }
 
 void MainWindow::inputClearEntry()
 {
-    // 只清除当前输入，保留待计算表达式
     if (hasError) {
         inputClear();
         return;
     }
+
+    // 等号后 CE 相当于全部清除
+    if (waitForOperand && pendingOperator.isEmpty()) {
+        inputClear();
+        return;
+    }
+
+    // 只清除当前输入为0，保留待计算表达式（如 "9 ×"）
     currentInput = "0";
+    secondOperandEntered = true;
     updateDisplay(currentInput);
 }
 
@@ -365,14 +389,15 @@ void MainWindow::inputNegate()
         return;
     }
 
-    // 等待输入时切换正负号，先取出第一操作数
-    if (waitForOperand) {
+    // 操作符后直接按正负号：取第一操作数作为当前值继续编辑
+    if (waitForOperand && !firstOperand.isEmpty()) {
         currentInput = firstOperand;
         waitForOperand = false;
     }
+    // 等号后 firstOperand 为空，直接对结果取负
 
     // 0不处理正负号
-    if (currentInput == "0" || currentInput.isEmpty()) {
+    if (currentInput.isEmpty() || currentInput == "0") {
         return;
     }
 
@@ -383,6 +408,7 @@ void MainWindow::inputNegate()
         currentInput.prepend('-');
     }
 
+    secondOperandEntered = true;
     updateDisplay(currentInput);
 }
 
@@ -390,6 +416,12 @@ void MainWindow::inputUnaryOperator(const QString &op)
 {
     if (hasError) {
         return;
+    }
+
+    // 操作符后未输入第二操作数时按一元运算：对第一操作数运算
+    if (waitForOperand && !firstOperand.isEmpty() && !secondOperandEntered) {
+        currentInput = firstOperand;
+        waitForOperand = false;
     }
 
     double value = currentInput.toDouble();
@@ -400,6 +432,7 @@ void MainWindow::inputUnaryOperator(const QString &op)
         if (qFuzzyIsNull(value)) {
             hasError = true;
             updateDisplay(QStringLiteral("除数不能为零"));
+            updateExpression(QString());
             return;
         }
         value = 1.0 / value;
@@ -410,8 +443,14 @@ void MainWindow::inputUnaryOperator(const QString &op)
     }
 
     currentInput = formatNumber(value);
-    waitForOperand = true; // 一元运算后视为完成一次计算
     updateDisplay(currentInput);
+    // 一元运算后当前值已就绪：等待后续等号/操作符/新数字
+    waitForOperand = true;
+    secondOperandEntered = true;
+    // 无待计算表达式时清空表达式行
+    if (pendingOperator.isEmpty()) {
+        updateExpression(QString());
+    }
 }
 
 // ==================== 辅助函数 ====================
@@ -425,6 +464,7 @@ bool MainWindow::calculate(double &result)
     if (!ok1 || !ok2) {
         hasError = true;
         updateDisplay(QStringLiteral("错误"));
+        updateExpression(QString());
         return false;
     }
 
@@ -438,6 +478,7 @@ bool MainWindow::calculate(double &result)
         if (qFuzzyIsNull(b)) {
             hasError = true;
             updateDisplay(QStringLiteral("除数不能为零"));
+            updateExpression(QString());
             return false;
         }
         result = a / b;
@@ -453,6 +494,11 @@ void MainWindow::updateDisplay(const QString &text)
     ui->displayEdit->setText(text);
 }
 
+void MainWindow::updateExpression(const QString &text)
+{
+    ui->expressionEdit->setText(text);
+}
+
 QString MainWindow::formatNumber(double value)
 {
     // 处理无穷大和NaN
@@ -466,8 +512,7 @@ QString MainWindow::formatNumber(double value)
     // 使用QString::number自动处理精度，'g'格式去除末尾多余的0
     QString str = QString::number(value, 'g', 15);
 
-    // 修复科学计数法中不必要的正号，如 "1e+05" -> "1e+05"（保持原样即可）
-    // 但把 "0e+00" 转为 "0"
+    // 把科学计数法表示的0转回 "0"，如 "0e+00"
     if (str.contains("e+00") || str.contains("e-00")) {
         double v = str.toDouble();
         if (qFuzzyIsNull(v)) {

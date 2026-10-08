@@ -66,8 +66,10 @@ private:
     void inputUnaryOperator(const QString &op);
     // 计算二元运算结果
     bool calculate(double &result);
-    // 更新显示
+    // 更新当前值显示（大字号，右下角）
     void updateDisplay(const QString &text);
+    // 更新表达式显示（小字号，上方，Windows 计算器风格）
+    void updateExpression(const QString &text);
     // 格式化数字显示，去除多余的0
     QString formatNumber(double value);
 
@@ -79,12 +81,12 @@ private:
     QString firstOperand;
     // 当前操作符
     QString pendingOperator;
-    // 是否刚完成计算（按了等号或一元运算），用于判断下一次输入是否清空
+    // 是否处于等待操作数状态（按操作符/等号/一元运算后为 true，此时输入数字将替换当前值）
     bool waitForOperand;
-    // 错误状态标志
+    // 当前值是否为用户明确输入（区分"操作符后尚未输入第二操作数"与"已输入/一元运算后"）
+    bool secondOperandEntered;
+    // 错误状态标志（如除零）
     bool hasError;
-    // 记录一元运算后的值，用于连续一元运算
-    double unaryResult;
 };
 
 #endif // MAINWINDOW_H

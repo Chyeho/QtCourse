@@ -14,13 +14,37 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QLineEdit" name="displayEdit">
+   <widget class="QLineEdit" name="expressionEdit">
     <property name="geometry">
      <rect>
       <x>0</x>
       <y>0</y>
       <width>320</width>
-      <height>100</height>
+      <height>32</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">border: none; color: rgb(140, 140, 140);</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="displayEdit">
+    <property name="geometry">
+     <rect>
+      <x>0</x>
+      <y>32</y>
+      <width>320</width>
+      <height>68</height>
      </rect>
     </property>
     <property name="minimumSize">
@@ -31,11 +55,14 @@
     </property>
     <property name="font">
      <font>
-      <pointsize>14</pointsize>
+      <pointsize>24</pointsize>
      </font>
     </property>
+    <property name="styleSheet">
+     <string notr="true">border: none;</string>
+    </property>
     <property name="alignment">
-     <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+     <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignBottom</set>
     </property>
     <property name="readOnly">
      <bool>true</bool>
