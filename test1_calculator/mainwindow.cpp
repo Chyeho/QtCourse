@@ -270,6 +270,11 @@ void MainWindow::inputDot()
 
 void MainWindow::inputOperator(const QString &op)
 {
+    // 统一减号表示：UI 减号按钮的文本是数学减号 "−"（U+2212），而键盘输入和
+    // calculate() 中的比较使用 ASCII 减号 "-"（U+002D）。两者字符编码不同，
+    // 若不归一化，鼠标点减号会导致 calculate() 匹配失败而直接返回第二操作数。
+    const QString normalizedOp = (op == QStringLiteral("\u2212")) ? QStringLiteral("-") : op;
+
     // 错误状态下先清除错误，用0作为起点继续
     if (hasError) {
         inputClear();
@@ -290,9 +295,9 @@ void MainWindow::inputOperator(const QString &op)
     }
     // 其余情况（连续按操作符且未输入第二操作数）：仅替换操作符，firstOperand 不变
 
-    pendingOperator = op;
+    pendingOperator = normalizedOp;
     // 表达式行显示第一操作数和操作符，如 "9 ×"；当前值行保持不变
-    updateExpression(formatNumber(firstOperand.toDouble()) + " " + op);
+    updateExpression(formatNumber(firstOperand.toDouble()) + " " + normalizedOp);
     waitForOperand = true;
     secondOperandEntered = false;
 }
