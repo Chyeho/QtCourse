@@ -13,6 +13,57 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">/* 1. 美化显示屏，去掉边框，让文字紧贴底部 */
+#expressionEdit, #displayEdit {
+    border: none;
+    background: white;
+    padding: 5px 15px;
+}
+
+/* 2. 给所有按钮统一添加圆角和鼠标悬停变深的效果，增加现代感 */
+QPushButton {
+    border: 1px solid #c0c0c0;
+    border-radius: 3px;
+    background-color: #f0f0f0;
+}
+QPushButton:hover {
+    background-color: #e0e0e0;
+}
+QPushButton:pressed {
+    background-color: #d0d0d0;
+}
+
+/* 3. 核心视觉区分：将四则运算符(加减乘除)设置为醒目的橙色 */
+#btnAdd, #btnSubtract, #btnMultiply, #btnDivide {
+    background-color: #ffb90f;
+    border: 1px solid #e0a100;
+    color: white;
+    font-weight: bold;
+}
+#btnAdd:hover, #btnSubtract:hover, #btnMultiply:hover, #btnDivide:hover {
+    background-color: #e8a80d;
+}
+#btnAdd:pressed, #btnSubtract:pressed, #btnMultiply:pressed, #btnDivide:pressed {
+    background-color: #d1970b;
+}
+
+/* 4. 等号按钮：设置为深橙色，作为视觉重心 */
+#btnEqual {
+    background-color: #f57c00;
+    border: 1px solid #e06f00;
+    color: white;
+    font-weight: bold;
+}
+#btnEqual:hover {
+    background-color: #e87100;
+}
+#btnEqual:pressed {
+    background-color: #d16500;
+}
+
+</string>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QLineEdit" name="expressionEdit">
     <property name="geometry">
@@ -62,7 +113,7 @@
      <string notr="true">border: none;</string>
     </property>
     <property name="alignment">
-     <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignBottom</set>
+     <set>Qt::AlignmentFlag::AlignBottom|Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing</set>
     </property>
     <property name="readOnly">
      <bool>true</bool>
@@ -254,6 +305,7 @@
     <property name="font">
      <font>
       <pointsize>14</pointsize>
+      <bold>true</bold>
      </font>
     </property>
     <property name="text">
@@ -350,6 +402,7 @@
     <property name="font">
      <font>
       <pointsize>14</pointsize>
+      <bold>true</bold>
      </font>
     </property>
     <property name="text">
@@ -494,6 +547,7 @@
     <property name="font">
      <font>
       <pointsize>14</pointsize>
+      <bold>true</bold>
      </font>
     </property>
     <property name="text">
@@ -566,6 +620,7 @@
     <property name="font">
      <font>
       <pointsize>14</pointsize>
+      <bold>true</bold>
      </font>
     </property>
     <property name="text">
@@ -638,6 +693,7 @@
     <property name="font">
      <font>
       <pointsize>14</pointsize>
+      <bold>true</bold>
      </font>
     </property>
     <property name="text">
