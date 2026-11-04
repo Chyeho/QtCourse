@@ -15,7 +15,7 @@ public:
     explicit FindDialog(QWidget *parent = nullptr);
     ~FindDialog();
 
-private:
+    // 暴露 UI 供外部访问（MainWindow 需要读取控件状态）
     Ui::FindDialog *ui;
 };
 

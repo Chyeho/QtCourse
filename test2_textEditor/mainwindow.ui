@@ -122,8 +122,8 @@
   </widget>
   <action name="actionNew">
    <property name="icon">
-    <iconset>
-     <normaloff>icon/新建.png</normaloff>icon/新建.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/icon/icon/new.png</normaloff>:/icon/icon/new.png</iconset>
    </property>
    <property name="text">
     <string>新建（Ctrl+N）</string>
@@ -137,8 +137,8 @@
   </action>
   <action name="actionOpen">
    <property name="icon">
-    <iconset>
-     <normaloff>icon/打开.png</normaloff>icon/打开.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/icon/icon/open.png</normaloff>:/icon/icon/open.png</iconset>
    </property>
    <property name="text">
     <string>打开（Ctrl+O）</string>
@@ -152,8 +152,8 @@
   </action>
   <action name="actionSave">
    <property name="icon">
-    <iconset>
-     <normaloff>icon/保存.png</normaloff>icon/保存.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/icon/icon/save.png</normaloff>:/icon/icon/save.png</iconset>
    </property>
    <property name="text">
     <string>保存（Ctrl+S）</string>
@@ -167,8 +167,8 @@
   </action>
   <action name="actionSaveAs">
    <property name="icon">
-    <iconset>
-     <normaloff>icon/另存为.png</normaloff>icon/另存为.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/icon/icon/saveas.png</normaloff>:/icon/icon/saveas.png</iconset>
    </property>
    <property name="text">
     <string>另存为</string>
@@ -179,8 +179,8 @@
   </action>
   <action name="actionQuit">
    <property name="icon">
-    <iconset>
-     <normaloff>icon/退出.png</normaloff>icon/退出.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/icon/icon/exit.png</normaloff>:/icon/icon/exit.png</iconset>
    </property>
    <property name="text">
     <string>退出</string>
@@ -191,8 +191,8 @@
   </action>
   <action name="actionUndo">
    <property name="icon">
-    <iconset>
-     <normaloff>icon/撤销.png</normaloff>icon/撤销.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/icon/icon/undo.png</normaloff>:/icon/icon/undo.png</iconset>
    </property>
    <property name="text">
     <string>撤销（Ctrl+Z）</string>
@@ -206,8 +206,8 @@
   </action>
   <action name="actionRedo">
    <property name="icon">
-    <iconset>
-     <normaloff>icon/恢复.png</normaloff>icon/恢复.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/icon/icon/redo.png</normaloff>:/icon/icon/redo.png</iconset>
    </property>
    <property name="text">
     <string>恢复（Ctrl+Shift+Z）</string>
@@ -221,8 +221,8 @@
   </action>
   <action name="actionCut">
    <property name="icon">
-    <iconset>
-     <normaloff>icon/剪切.png</normaloff>icon/剪切.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/icon/icon/cut.png</normaloff>:/icon/icon/cut.png</iconset>
    </property>
    <property name="text">
     <string>剪切（Ctrl+X）</string>
@@ -236,8 +236,8 @@
   </action>
   <action name="actionCopy">
    <property name="icon">
-    <iconset>
-     <normaloff>icon/复制.png</normaloff>icon/复制.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/icon/icon/copy.png</normaloff>:/icon/icon/copy.png</iconset>
    </property>
    <property name="text">
     <string>复制（Ctrl+C）</string>
@@ -251,8 +251,8 @@
   </action>
   <action name="actionPaste">
    <property name="icon">
-    <iconset>
-     <normaloff>icon/粘贴.png</normaloff>icon/粘贴.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/icon/icon/paste.png</normaloff>:/icon/icon/paste.png</iconset>
    </property>
    <property name="text">
     <string>粘贴（Ctrl+V）</string>
@@ -266,8 +266,8 @@
   </action>
   <action name="actionFind">
    <property name="icon">
-    <iconset>
-     <normaloff>icon/查找.png</normaloff>icon/查找.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/icon/icon/find.png</normaloff>:/icon/icon/find.png</iconset>
    </property>
    <property name="text">
     <string>查找（Ctrl+F）</string>
@@ -281,8 +281,8 @@
   </action>
   <action name="actionReplace">
    <property name="icon">
-    <iconset>
-     <normaloff>icon/替换.png</normaloff>icon/替换.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/icon/icon/replace.png</normaloff>:/icon/icon/replace.png</iconset>
    </property>
    <property name="text">
     <string>替换（Ctrl+H）</string>
@@ -310,8 +310,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
-     <normaloff>icon/自动换行.png</normaloff>icon/自动换行.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/icon/icon/wrap.png</normaloff>:/icon/icon/wrap.png</iconset>
    </property>
    <property name="text">
     <string>自动换行</string>
@@ -322,8 +322,8 @@
   </action>
   <action name="actionFont">
    <property name="icon">
-    <iconset>
-     <normaloff>icon/字体.png</normaloff>icon/字体.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/icon/icon/font.png</normaloff>:/icon/icon/font.png</iconset>
    </property>
    <property name="text">
     <string>字体</string>
@@ -361,8 +361,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
-     <normaloff>icon/工具栏.png</normaloff>icon/工具栏.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/icon/icon/toolbar.png</normaloff>:/icon/icon/toolbar.png</iconset>
    </property>
    <property name="text">
     <string>工具栏</string>
@@ -376,8 +376,8 @@
     <bool>true</bool>
    </property>
    <property name="icon">
-    <iconset>
-     <normaloff>icon/消息-状态栏.png</normaloff>icon/消息-状态栏.png</iconset>
+    <iconset resource="resources.qrc">
+     <normaloff>:/icon/icon/statusbar.png</normaloff>:/icon/icon/statusbar.png</iconset>
    </property>
    <property name="text">
     <string>状态栏</string>
@@ -395,6 +395,8 @@
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
  <connections/>
 </ui>
