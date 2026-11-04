@@ -9,6 +9,8 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
+class QTimer;
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -39,6 +41,7 @@ private slots:
 
     // === 格式操作 ===
     void onAutoWrap();          // 自动换行
+    void onShowLineNumbers();   // 显示/隐藏行号
     void onFont();              // 字体
     void onFontColor();         // 字体颜色
     void onTextBgColor();       // 字体背景色
@@ -47,6 +50,7 @@ private slots:
     // === 查看操作 ===
     void onToggleToolbar();
     void onToggleStatusbar();
+    void onToggleAutoSave();    // 开启/关闭定时自动保存
 
     // === 帮助 ===
     void onAbout();
@@ -64,6 +68,9 @@ private slots:
     // === 粘贴按钮使能（剪贴板变化）===
     void onClipboardChanged();
 
+    // === 定时自动保存（由 QTimer timeout 触发）===
+    void autoSave();
+
 private:
     // 从文件读取到 textEdit
     bool loadFile(const QString &path);
@@ -77,6 +84,9 @@ private:
 
     // 当前文件路径（为空表示尚未保存过的新文件）
     QString m_currentFilePath;
+
+    // 定时自动保存定时器
+    QTimer *m_autoSaveTimer;
 };
 
 #endif // MAINWINDOW_H

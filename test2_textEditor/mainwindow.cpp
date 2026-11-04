@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "codeeditor.h"
 #include "finddialog.h"
 #include "ui_finddialog.h"
 #include "replacedialog.h"
@@ -17,10 +18,16 @@
 #include <QApplication>
 #include <QTextCursor>
 #include <QCloseEvent>
+#include <QTimer>
+#include <QFileInfo>
+
+// 定时自动保存间隔（毫秒）
+static const int kAutoSaveIntervalMs = 30 * 1000;
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
+    , m_autoSaveTimer(new QTimer(this))
 {
     ui->setupUi(this);
     ui->toolBar->setToolButtonStyle(Qt::ToolButtonIconOnly);
@@ -53,6 +60,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     // ========== 格式操作 Action 连接 ==========
     connect(ui->actionAutoWrap, &QAction::triggered, this, &MainWindow::onAutoWrap);
+    connect(ui->actionShowLineNumbers, &QAction::triggered,
+            this, &MainWindow::onShowLineNumbers);
     connect(ui->actionFont, &QAction::triggered, this, &MainWindow::onFont);
     connect(ui->actionFontColor, &QAction::triggered, this, &MainWindow::onFontColor);
     connect(ui->agBgColor, &QAction::triggered, this, &MainWindow::onTextBgColor);
@@ -61,6 +70,8 @@ MainWindow::MainWindow(QWidget *parent)
     // ========== 查看操作 Action 连接 ==========
     connect(ui->actionToggleToolbar, &QAction::triggered, this, &MainWindow::onToggleToolbar);
     connect(ui->actionToggleStatusbar, &QAction::triggered, this, &MainWindow::onToggleStatusbar);
+    connect(ui->actionAutoSave, &QAction::triggered,
+            this, &MainWindow::onToggleAutoSave);
 
     // ========== 帮助 Action ==========
     connect(ui->actionAbout, &QAction::triggered, this, &MainWindow::onAbout);
@@ -71,15 +82,15 @@ MainWindow::MainWindow(QWidget *parent)
 
     // ========== textEdit 信号连接 ==========
     // 复制/剪切按钮使能
-    connect(ui->textEdit, &QPlainTextEdit::copyAvailable,
+    connect(ui->textEdit, &CodeEditor::copyAvailable,
             ui->actionCut, &QAction::setEnabled);
-    connect(ui->textEdit, &QPlainTextEdit::copyAvailable,
+    connect(ui->textEdit, &CodeEditor::copyAvailable,
             ui->actionCopy, &QAction::setEnabled);
 
     // 撤销/重做按钮使能
-    connect(ui->textEdit, &QPlainTextEdit::undoAvailable,
+    connect(ui->textEdit, &CodeEditor::undoAvailable,
             ui->actionUndo, &QAction::setEnabled);
-    connect(ui->textEdit, &QPlainTextEdit::redoAvailable,
+    connect(ui->textEdit, &CodeEditor::redoAvailable,
             ui->actionRedo, &QAction::setEnabled);
 
     // 剪贴板变化时更新粘贴按钮使能
@@ -89,11 +100,11 @@ MainWindow::MainWindow(QWidget *parent)
     onClipboardChanged();
 
     // 状态栏实时更新
-    connect(ui->textEdit, &QPlainTextEdit::blockCountChanged,
+    connect(ui->textEdit, &CodeEditor::blockCountChanged,
             this, &MainWindow::updateStatusBar);
-    connect(ui->textEdit, &QPlainTextEdit::cursorPositionChanged,
+    connect(ui->textEdit, &CodeEditor::cursorPositionChanged,
             this, &MainWindow::updateStatusBar);
-    connect(ui->textEdit, &QPlainTextEdit::textChanged,
+    connect(ui->textEdit, &CodeEditor::textChanged,
             this, &MainWindow::updateStatusBar);
     // 初始化状态栏
     updateStatusBar();
@@ -101,6 +112,12 @@ MainWindow::MainWindow(QWidget *parent)
     // 文档修改状态 -> 窗口标题
     connect(ui->textEdit->document(), &QTextDocument::modificationChanged,
             this, &MainWindow::onDocumentModified);
+
+    // ========== 定时自动保存 ==========
+    m_autoSaveTimer->setInterval(kAutoSaveIntervalMs);
+    connect(m_autoSaveTimer, &QTimer::timeout, this, &MainWindow::autoSave);
+    // 默认开启
+    m_autoSaveTimer->start();
 }
 
 MainWindow::~MainWindow()
@@ -282,6 +299,13 @@ void MainWindow::onAutoWrap()
     }
 }
 
+void MainWindow::onShowLineNumbers()
+{
+    // 切换行号栏显示
+    ui->textEdit->setLineNumberAreaVisible(
+        ui->actionShowLineNumbers->isChecked());
+}
+
 void MainWindow::onFont()
 {
     bool ok = false;
@@ -349,6 +373,20 @@ void MainWindow::onToggleToolbar()
 void MainWindow::onToggleStatusbar()
 {
     statusBar()->setVisible(ui->actionToggleStatusbar->isChecked());
+}
+
+void MainWindow::onToggleAutoSave()
+{
+    // 根据 Action 勾选状态启停定时器
+    if (ui->actionAutoSave->isChecked()) {
+        if (!m_autoSaveTimer->isActive()) {
+            m_autoSaveTimer->start();
+        }
+    } else {
+        if (m_autoSaveTimer->isActive()) {
+            m_autoSaveTimer->stop();
+        }
+    }
 }
 
 // =====================================================================
@@ -482,7 +520,7 @@ void MainWindow::onReplace()
 // =====================================================================
 void MainWindow::updateStatusBar()
 {
-    QPlainTextEdit *edit = ui->textEdit;
+    CodeEditor *edit = ui->textEdit;
     QString text = edit->toPlainText();
 
     // 长度（字符数）
@@ -536,6 +574,27 @@ void MainWindow::onClipboardChanged()
 {
     ui->actionPaste->setEnabled(
         !QApplication::clipboard()->text().isEmpty());
+}
+
+// =====================================================================
+// 定时自动保存（静默保存，不弹对话框）
+// =====================================================================
+void MainWindow::autoSave()
+{
+    // 只有文档已修改且有保存过的路径时才自动保存
+    if (!ui->textEdit->document()->isModified()) {
+        return;
+    }
+    if (m_currentFilePath.isEmpty()) {
+        return;
+    }
+
+    // 静默保存（saveFile 内部也不弹对话框，失败只会 return false）
+    if (saveFile(m_currentFilePath)) {
+        ui->textEdit->document()->setModified(false);
+        updateWindowTitle();
+    }
+    // 自动保存失败时保持静默，等下一轮定时器再试
 }
 
 // =====================================================================

@@ -17,7 +17,7 @@
    <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <widget class="QPlainTextEdit" name="textEdit">
+   <widget class="CodeEditor" name="textEdit">
     <property name="geometry">
      <rect>
       <x>0</x>
@@ -69,6 +69,7 @@
      <string>格式</string>
     </property>
     <addaction name="actionAutoWrap"/>
+    <addaction name="actionShowLineNumbers"/>
     <addaction name="separator"/>
     <addaction name="actionFont"/>
     <addaction name="actionFontColor"/>
@@ -81,6 +82,8 @@
     </property>
     <addaction name="actionToggleToolbar"/>
     <addaction name="actionToggleStatusbar"/>
+    <addaction name="separator"/>
+    <addaction name="actionAutoSave"/>
    </widget>
    <widget class="QMenu" name="menu_5">
     <property name="title">
@@ -320,6 +323,23 @@
     <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
+  <action name="actionShowLineNumbers">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>显示行号(&amp;L)</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+L</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
   <action name="actionFont">
    <property name="icon">
     <iconset resource="resources.qrc">
@@ -386,6 +406,20 @@
     <enum>QAction::MenuRole::NoRole</enum>
    </property>
   </action>
+  <action name="actionAutoSave">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>自动保存</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
   <action name="actionAbout">
    <property name="text">
     <string>关于</string>
@@ -395,6 +429,14 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>CodeEditor</class>
+   <extends>QPlainTextEdit</extends>
+   <header>codeeditor.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resources.qrc"/>
  </resources>
