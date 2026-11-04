@@ -82,9 +82,6 @@
    <property name="text">
     <string/>
    </property>
-   <property name="pixmap">
-    <pixmap>icon/笔记本.png</pixmap>
-   </property>
   </widget>
   <widget class="QWidget" name="">
    <property name="geometry">
