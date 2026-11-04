@@ -11,6 +11,8 @@ class MainWindow;
 QT_END_NAMESPACE
 
 class QTimer;
+class FindDialog;
+class ReplaceDialog;
 
 class MainWindow : public QMainWindow
 {
@@ -57,8 +59,15 @@ private slots:
     void onAbout();
 
     // === 查找 / 替换 ===
-    void onFind();
-    void onReplace();
+    void onFind();      // 打开查找窗口
+    void onReplace();   // 打开替换窗口
+
+    // 对话框发来的实际操作请求
+    void doFind(const QString &text, QTextDocument::FindFlags flags);
+    void doReplaceOne(const QString &text, const QString &replacement,
+                      QTextDocument::FindFlags flags);
+    void doReplaceAll(const QString &text, const QString &replacement,
+                      QTextDocument::FindFlags flags);
 
     // === 状态栏更新 ===
     void updateStatusBar();
@@ -90,6 +99,10 @@ private:
 
     // 定时自动保存定时器
     QTimer *m_autoSaveTimer;
+
+    // 查找 / 替换窗口（非模态，常驻复用）
+    FindDialog    *m_findDialog = nullptr;
+    ReplaceDialog *m_replaceDialog = nullptr;
 };
 
 #endif // MAINWINDOW_H

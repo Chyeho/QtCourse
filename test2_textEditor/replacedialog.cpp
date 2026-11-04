@@ -10,17 +10,50 @@ ReplaceDialog::ReplaceDialog(QWidget *parent)
     // 方向默认：向下
     ui->radioDown->setChecked(true);
 
-    // 按钮行为：每个按钮都 accept，但通过不同的 result 值区分
-    // btnCancel → reject
-    connect(ui->btnCancel, &QPushButton::clicked, this, &QDialog::reject);
+    ui->findEdit->setFocus();
 
-    // 其他三个按钮 → 不同的 result 值
-    connect(ui->btnFindNext,   &QPushButton::clicked, this, [this](){ setResult(1); accept(); });
-    connect(ui->btnReplace,    &QPushButton::clicked, this, [this](){ setResult(2); accept(); });
-    connect(ui->btnReplaceAll, &QPushButton::clicked, this, [this](){ setResult(3); accept(); });
+    // 三个功能按钮只发信号，不关闭对话框，便于连续操作
+    connect(ui->btnFindNext, &QPushButton::clicked, this, [this]() {
+        const QString text = ui->findEdit->text();
+        if (text.isEmpty()) {
+            return;
+        }
+        emit searchRequested(text, findFlags());
+    });
+
+    connect(ui->btnReplace, &QPushButton::clicked, this, [this]() {
+        const QString text = ui->findEdit->text();
+        if (text.isEmpty()) {
+            return;
+        }
+        emit replaceRequested(text, ui->replaceEdit->text(), findFlags());
+    });
+
+    connect(ui->btnReplaceAll, &QPushButton::clicked, this, [this]() {
+        const QString text = ui->findEdit->text();
+        if (text.isEmpty()) {
+            return;
+        }
+        emit replaceAllRequested(text, ui->replaceEdit->text(), findFlags());
+    });
+
+    // 取消：关闭（隐藏）对话框
+    connect(ui->btnCancel, &QPushButton::clicked, this, &QDialog::reject);
 }
 
 ReplaceDialog::~ReplaceDialog()
 {
     delete ui;
+}
+
+QTextDocument::FindFlags ReplaceDialog::findFlags() const
+{
+    QTextDocument::FindFlags flags;
+    if (ui->radioUp->isChecked()) {
+        flags |= QTextDocument::FindBackward;
+    }
+    if (ui->caseSensitiveCheck->isChecked()) {
+        flags |= QTextDocument::FindCaseSensitively;
+    }
+    return flags;
 }

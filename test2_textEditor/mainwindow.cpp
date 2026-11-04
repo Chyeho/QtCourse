@@ -2,9 +2,7 @@
 #include "ui_mainwindow.h"
 #include "codeeditor.h"
 #include "finddialog.h"
-#include "ui_finddialog.h"
 #include "replacedialog.h"
-#include "ui_replacedialog.h"
 #include "aboutdialog.h"
 
 #include <QFile>
@@ -403,112 +401,109 @@ void MainWindow::onAbout()
 // =====================================================================
 void MainWindow::onFind()
 {
-    FindDialog dlg(this);
-
-    // 预先设置默认方向：向下
-    dlg.ui->radioDown->setChecked(true);
-
-    if (dlg.exec() != QDialog::Accepted) {
-        return;
+    // 非模态窗口：只创建一次，之后复用；点"取消"只是隐藏，不销毁
+    if (!m_findDialog) {
+        m_findDialog = new FindDialog(this);
+        connect(m_findDialog, &FindDialog::searchRequested,
+                this, &MainWindow::doFind);
     }
-
-    QString searchText = dlg.ui->findEdit->text();
-    if (searchText.isEmpty()) {
-        return;
-    }
-
-    QTextDocument::FindFlags flags;
-    if (dlg.ui->radioUp->isChecked()) {
-        flags |= QTextDocument::FindBackward;
-    }
-    if (dlg.ui->caseSensitiveCheck->isChecked()) {
-        flags |= QTextDocument::FindCaseSensitively;
-    }
-
-    if (!findText(searchText, flags)) {
-        QMessageBox::information(this, QStringLiteral("查找"),
-                                 QStringLiteral("找不到\"%1\"").arg(searchText));
-    }
+    m_findDialog->show();
+    m_findDialog->raise();
+    m_findDialog->activateWindow();
 }
 
 void MainWindow::onReplace()
 {
-    ReplaceDialog dlg(this);
+    // 非模态窗口：只创建一次，之后复用
+    if (!m_replaceDialog) {
+        m_replaceDialog = new ReplaceDialog(this);
+        connect(m_replaceDialog, &ReplaceDialog::searchRequested,
+                this, &MainWindow::doFind);
+        connect(m_replaceDialog, &ReplaceDialog::replaceRequested,
+                this, &MainWindow::doReplaceOne);
+        connect(m_replaceDialog, &ReplaceDialog::replaceAllRequested,
+                this, &MainWindow::doReplaceAll);
+    }
+    m_replaceDialog->show();
+    m_replaceDialog->raise();
+    m_replaceDialog->activateWindow();
+}
 
-    if (dlg.exec() != QDialog::Accepted) {
-        return;
+// 查找下一个（对话框不关闭，可连续查找）
+void MainWindow::doFind(const QString &text, QTextDocument::FindFlags flags)
+{
+    if (!findText(text, flags)) {
+        QMessageBox::information(this, QStringLiteral("查找"),
+                                 QStringLiteral("找不到\"%1\"").arg(text));
+    }
+}
+
+// 替换一处，然后自动跳到下一个匹配处
+void MainWindow::doReplaceOne(const QString &text, const QString &replacement,
+                              QTextDocument::FindFlags flags)
+{
+    QTextCursor cursor = ui->textEdit->textCursor();
+
+    // 判断当前选区是否就是要替换的目标（区分是否大小写敏感）
+    bool matched = cursor.hasSelection()
+        && (flags.testFlag(QTextDocument::FindCaseSensitively)
+                ? cursor.selectedText() == text
+                : cursor.selectedText().compare(text, Qt::CaseInsensitive) == 0);
+
+    // 当前没有选中目标时，先查找下一个，再替换
+    if (!matched) {
+        if (!findText(text, flags)) {
+            QMessageBox::information(this, QStringLiteral("替换"),
+                                     QStringLiteral("找不到\"%1\"").arg(text));
+            return;
+        }
+        cursor = ui->textEdit->textCursor();
     }
 
-    QString searchText  = dlg.ui->findEdit->text();
-    QString replaceText = dlg.ui->replaceEdit->text();
-    if (searchText.isEmpty()) {
-        return;
+    // 替换当前选中内容
+    cursor.beginEditBlock();
+    cursor.removeSelectedText();
+    cursor.insertText(replacement);
+    cursor.endEditBlock();
+
+    // 继续查找下一个，方便连续点击"替换"
+    findText(text, flags);
+}
+
+// 全部替换
+void MainWindow::doReplaceAll(const QString &text, const QString &replacement,
+                              QTextDocument::FindFlags flags)
+{
+    // 用 QTextDocument::find + 显式游标逐段查找替换，
+    // QTextDocument::find 不会自动绕回，循环必然能正常结束
+    QTextCursor cursor(ui->textEdit->document());
+    cursor.movePosition(flags.testFlag(QTextDocument::FindBackward)
+                            ? QTextCursor::End
+                            : QTextCursor::Start);
+
+    int replaceCount = 0;
+    while (true) {
+        QTextCursor found = ui->textEdit->document()->find(text, cursor, flags);
+        if (found.isNull()) {
+            break;
+        }
+
+        found.beginEditBlock();
+        found.removeSelectedText();
+        found.insertText(replacement);
+        found.endEditBlock();
+
+        // 从替换后的位置继续向后查找
+        cursor = found;
+        ++replaceCount;
     }
 
-    QTextDocument::FindFlags flags;
-    if (dlg.ui->radioUp->isChecked()) {
-        flags |= QTextDocument::FindBackward;
-    }
-    if (dlg.ui->caseSensitiveCheck->isChecked()) {
-        flags |= QTextDocument::FindCaseSensitively;
-    }
-
-    int clicked = dlg.result();
-
-    if (clicked == 1) {
-        // ===== 查找下一个 =====
-        if (!findText(searchText, flags)) {
-            QMessageBox::information(this, QStringLiteral("替换"),
-                                     QStringLiteral("找不到\"%1\"").arg(searchText));
-        }
-    } else if (clicked == 2) {
-        // ===== 替换当前选中 + 查找下一个 =====
-        QTextCursor cursor = ui->textEdit->textCursor();
-        if (cursor.hasSelection() && cursor.selectedText() == searchText) {
-            cursor.beginEditBlock();
-            cursor.removeSelectedText();
-            cursor.insertText(replaceText);
-            cursor.endEditBlock();
-        }
-        // 替换后自动查找下一个
-        if (!findText(searchText, flags)) {
-            QMessageBox::information(this, QStringLiteral("替换"),
-                                     QStringLiteral("找不到\"%1\"").arg(searchText));
-        }
-    } else if (clicked == 3) {
-        // ===== 全部替换 =====
-        // 用 QTextDocument::find + 显式游标逐段查找替换，
-        // QTextDocument::find 不会自动绕回，循环必然能正常结束
-        QTextCursor cursor(ui->textEdit->document());
-        cursor.movePosition(flags.testFlag(QTextDocument::FindBackward)
-                                ? QTextCursor::End
-                                : QTextCursor::Start);
-
-        int replaceCount = 0;
-        while (true) {
-            QTextCursor found = ui->textEdit->document()->find(
-                searchText, cursor, flags);
-            if (found.isNull()) {
-                break;
-            }
-
-            found.beginEditBlock();
-            found.removeSelectedText();
-            found.insertText(replaceText);
-            found.endEditBlock();
-
-            // 从替换后的位置继续向后查找
-            cursor = found;
-            ++replaceCount;
-        }
-
-        if (replaceCount == 0) {
-            QMessageBox::information(this, QStringLiteral("替换"),
-                                     QStringLiteral("找不到\"%1\"").arg(searchText));
-        } else {
-            QMessageBox::information(this, QStringLiteral("替换"),
-                                     QStringLiteral("共替换了 %1 处").arg(replaceCount));
-        }
+    if (replaceCount == 0) {
+        QMessageBox::information(this, QStringLiteral("替换"),
+                                 QStringLiteral("找不到\"%1\"").arg(text));
+    } else {
+        QMessageBox::information(this, QStringLiteral("替换"),
+                                 QStringLiteral("共替换了 %1 处").arg(replaceCount));
     }
 }
 

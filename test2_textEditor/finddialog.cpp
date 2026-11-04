@@ -10,16 +10,36 @@ FindDialog::FindDialog(QWidget *parent)
     // 方向默认：向下
     ui->radioDown->setChecked(true);
 
-    // 打开对话框时直接把焦点放到输入框，方便直接输入
+    // 打开对话框时直接把焦点放到输入框
     ui->findEdit->setFocus();
-
-    // 按钮行为：查找下一个 → Accepted；取消 → Rejected
     ui->btnFindNext->setDefault(true);
-    connect(ui->btnFindNext, &QPushButton::clicked, this, &QDialog::accept);
-    connect(ui->btnCancel,   &QPushButton::clicked, this, &QDialog::reject);
+
+    // 查找下一个：只发出查找请求，不关闭对话框，可连续点击
+    connect(ui->btnFindNext, &QPushButton::clicked, this, [this]() {
+        const QString text = ui->findEdit->text();
+        if (text.isEmpty()) {
+            return;
+        }
+        emit searchRequested(text, findFlags());
+    });
+
+    // 取消：关闭（隐藏）对话框
+    connect(ui->btnCancel, &QPushButton::clicked, this, &QDialog::reject);
 }
 
 FindDialog::~FindDialog()
 {
     delete ui;
+}
+
+QTextDocument::FindFlags FindDialog::findFlags() const
+{
+    QTextDocument::FindFlags flags;
+    if (ui->radioUp->isChecked()) {
+        flags |= QTextDocument::FindBackward;
+    }
+    if (ui->caseSensitiveCheck->isChecked()) {
+        flags |= QTextDocument::FindCaseSensitively;
+    }
+    return flags;
 }
