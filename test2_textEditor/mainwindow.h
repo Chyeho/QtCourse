@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QTextDocument>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -78,6 +79,8 @@ private:
     bool saveFile(const QString &path);
     // 更新窗口标题（根据当前文件名 + 修改状态）
     void updateWindowTitle();
+    // 在文本中查找（找不到时自动从头/从尾绕回一次，实现循环查找）
+    bool findText(const QString &text, QTextDocument::FindFlags flags);
 
 private:
     Ui::MainWindow *ui;

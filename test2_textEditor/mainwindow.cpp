@@ -425,8 +425,7 @@ void MainWindow::onFind()
         flags |= QTextDocument::FindCaseSensitively;
     }
 
-    bool found = ui->textEdit->find(searchText, flags);
-    if (!found) {
+    if (!findText(searchText, flags)) {
         QMessageBox::information(this, QStringLiteral("查找"),
                                  QStringLiteral("找不到\"%1\"").arg(searchText));
     }
@@ -458,8 +457,7 @@ void MainWindow::onReplace()
 
     if (clicked == 1) {
         // ===== 查找下一个 =====
-        bool found = ui->textEdit->find(searchText, flags);
-        if (!found) {
+        if (!findText(searchText, flags)) {
             QMessageBox::information(this, QStringLiteral("替换"),
                                      QStringLiteral("找不到\"%1\"").arg(searchText));
         }
@@ -473,36 +471,35 @@ void MainWindow::onReplace()
             cursor.endEditBlock();
         }
         // 替换后自动查找下一个
-        bool found = ui->textEdit->find(searchText, flags);
-        if (!found) {
+        if (!findText(searchText, flags)) {
             QMessageBox::information(this, QStringLiteral("替换"),
                                      QStringLiteral("找不到\"%1\"").arg(searchText));
         }
     } else if (clicked == 3) {
         // ===== 全部替换 =====
-        // 全部替换时忽略方向，从头扫到尾即可；
-        // 若用户勾选了"向上"，则先移到末尾向前扫
-        bool forward = !flags.testFlag(QTextDocument::FindBackward);
-
-        if (!forward) {
-            QTextCursor cursor(ui->textEdit->document());
-            cursor.movePosition(QTextCursor::End);
-            ui->textEdit->setTextCursor(cursor);
-            flags &= ~QTextDocument::FindBackward;
-        } else {
-            QTextCursor cursor(ui->textEdit->document());
-            cursor.movePosition(QTextCursor::Start);
-            ui->textEdit->setTextCursor(cursor);
-        }
+        // 用 QTextDocument::find + 显式游标逐段查找替换，
+        // QTextDocument::find 不会自动绕回，循环必然能正常结束
+        QTextCursor cursor(ui->textEdit->document());
+        cursor.movePosition(flags.testFlag(QTextDocument::FindBackward)
+                                ? QTextCursor::End
+                                : QTextCursor::Start);
 
         int replaceCount = 0;
-        while (ui->textEdit->find(searchText, flags)) {
-            QTextCursor cursor = ui->textEdit->textCursor();
-            cursor.beginEditBlock();
-            cursor.removeSelectedText();
-            cursor.insertText(replaceText);
-            cursor.endEditBlock();
-            replaceCount++;
+        while (true) {
+            QTextCursor found = ui->textEdit->document()->find(
+                searchText, cursor, flags);
+            if (found.isNull()) {
+                break;
+            }
+
+            found.beginEditBlock();
+            found.removeSelectedText();
+            found.insertText(replaceText);
+            found.endEditBlock();
+
+            // 从替换后的位置继续向后查找
+            cursor = found;
+            ++replaceCount;
         }
 
         if (replaceCount == 0) {
@@ -513,6 +510,26 @@ void MainWindow::onReplace()
                                      QStringLiteral("共替换了 %1 处").arg(replaceCount));
         }
     }
+}
+
+// =====================================================================
+// 查找辅助：QPlainTextEdit::find 从当前光标处开始且不会绕回，
+// 所以第一次失败时把光标移到文档开头（或末尾）再找一次
+// =====================================================================
+bool MainWindow::findText(const QString &text, QTextDocument::FindFlags flags)
+{
+    if (ui->textEdit->find(text, flags)) {
+        return true;
+    }
+
+    // 绕回：向上查找移到文档末尾，向下查找移到文档开头
+    QTextCursor cursor(ui->textEdit->document());
+    cursor.movePosition(flags.testFlag(QTextDocument::FindBackward)
+                            ? QTextCursor::End
+                            : QTextCursor::Start);
+    ui->textEdit->setTextCursor(cursor);
+
+    return ui->textEdit->find(text, flags);
 }
 
 // =====================================================================
