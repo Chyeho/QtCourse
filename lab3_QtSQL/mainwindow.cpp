@@ -4,6 +4,7 @@
 #include "welcomewidget.h"
 #include "patientwidget.h"
 #include "patienteditwidget.h"
+#include "database.h"
 
 #include <QStackedWidget>
 #include <QLabel>
@@ -141,6 +142,12 @@ void MainWindow::setupUi()
     this->resize(800, 600);
     this->setWindowTitle("医院诊疗系统");
     qApp->setStyleSheet(QString::fromUtf8(g_styleSheet));
+
+    // 建立数据库连接，失败给出明确提示
+    if (!Database::instance().open()) {
+        QMessageBox::critical(this, "数据库连接失败",
+                              "无法连接到 MySQL 数据库：\n" + Database::instance().lastError());
+    }
 
     auto *central = new QWidget(this);
     this->setCentralWidget(central);

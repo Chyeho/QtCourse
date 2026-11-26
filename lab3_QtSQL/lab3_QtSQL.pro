@@ -1,4 +1,4 @@
-QT += widgets
+QT += widgets sql
 
 CONFIG += c++17
 
@@ -12,14 +12,16 @@ SOURCES += \
     loginwidget.cpp \
     welcomewidget.cpp \
     patientwidget.cpp \
-    patienteditwidget.cpp
+    patienteditwidget.cpp \
+    database.cpp
 
 HEADERS += \
     mainwindow.h \
     loginwidget.h \
     welcomewidget.h \
     patientwidget.h \
-    patienteditwidget.h
+    patienteditwidget.h \
+    database.h
 
 FORMS += \
     mainwindow.ui
