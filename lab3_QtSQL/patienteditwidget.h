@@ -2,6 +2,7 @@
 #define PATIENTEDITWIDGET_H
 
 #include <QWidget>
+#include <QSqlRecord>
 
 class QLineEdit;
 class QComboBox;
@@ -27,9 +28,18 @@ public:
     QPushButton *saveButton() const { return m_saveBtn; }
     QPushButton *cancelButton() const { return m_cancelBtn; }
 
+    // 进入新增模式：清空表单，编号可编辑
+    void clearForm();
+    // 进入修改模式：回填已有记录，编号只读
+    void loadRecord(const QSqlRecord &rec);
+    // 表单校验，通过返回 true；失败时 error 带出提示信息
+    bool validate(QString &error) const;
+    bool isAddMode() const { return m_isAddMode; }
+
 private:
     void setupUi();
 
+    bool m_isAddMode = true;
     QLineEdit *m_idEdit = nullptr;
     QLineEdit *m_nameEdit = nullptr;
     QLineEdit *m_idCardEdit = nullptr;

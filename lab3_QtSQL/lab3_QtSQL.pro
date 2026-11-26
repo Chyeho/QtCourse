@@ -13,6 +13,7 @@ SOURCES += \
     welcomewidget.cpp \
     patientwidget.cpp \
     patienteditwidget.cpp \
+    patientmodel.cpp \
     database.cpp
 
 HEADERS += \
@@ -21,6 +22,7 @@ HEADERS += \
     welcomewidget.h \
     patientwidget.h \
     patienteditwidget.h \
+    patientmodel.h \
     database.h
 
 FORMS += \

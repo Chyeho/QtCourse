@@ -8,6 +8,7 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QDate>
+#include <QRegularExpression>
 
 PatientEditWidget::PatientEditWidget(QWidget *parent)
     : QWidget(parent)
@@ -96,4 +97,63 @@ void PatientEditWidget::setupUi()
 
     mainLayout->addWidget(panel, 0, Qt::AlignCenter);
     mainLayout->addStretch();
+}
+
+void PatientEditWidget::clearForm()
+{
+    m_isAddMode = true;
+    m_idEdit->setReadOnly(false);
+    m_idEdit->clear();
+    m_nameEdit->clear();
+    m_idCardEdit->clear();
+    m_sexCombo->setCurrentIndex(0);
+    m_dobEdit->setDate(QDate(2000, 1, 1));
+    m_heightSpin->setValue(0);
+    m_weightSpin->setValue(0);
+    m_mobileEdit->clear();
+}
+
+void PatientEditWidget::loadRecord(const QSqlRecord &rec)
+{
+    m_isAddMode = false;
+    m_idEdit->setReadOnly(true);
+    m_idEdit->setText(rec.value("ID").toString());
+    m_nameEdit->setText(rec.value("NAME").toString());
+    m_idCardEdit->setText(rec.value("ID_CARD").toString());
+
+    const int sex = rec.value("SEX").toInt();
+    m_sexCombo->setCurrentIndex(sex == 1 ? 0 : 1);
+
+    const QDate dob = QDate::fromString(rec.value("DOB").toString(), "yyyy/M/d");
+    m_dobEdit->setDate(dob.isValid() ? dob : QDate(2000, 1, 1));
+
+    m_heightSpin->setValue(rec.value("HEIGHT").toDouble());
+    m_weightSpin->setValue(rec.value("WEIGHT").toDouble());
+    m_mobileEdit->setText(rec.value("MOBILEPHONE").toString());
+}
+
+bool PatientEditWidget::validate(QString &error) const
+{
+    if (m_idEdit->text().trimmed().isEmpty()) {
+        error = "患者编号不能为空";
+        return false;
+    }
+    if (m_nameEdit->text().trimmed().isEmpty()) {
+        error = "患者姓名不能为空";
+        return false;
+    }
+
+    const QString idCard = m_idCardEdit->text().trimmed();
+    if (!idCard.isEmpty() && idCard.length() != 18) {
+        error = "身份证号应为 18 位（留空可跳过）";
+        return false;
+    }
+
+    const QString mobile = m_mobileEdit->text().trimmed();
+    if (!mobile.isEmpty() &&
+        !QRegularExpression(QStringLiteral("^1\\d{10}$")).match(mobile).hasMatch()) {
+        error = "手机号应为 11 位数字（留空可跳过）";
+        return false;
+    }
+    return true;
 }

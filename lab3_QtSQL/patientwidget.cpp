@@ -1,4 +1,5 @@
 #include "patientwidget.h"
+#include "patientmodel.h"
 #include "database.h"
 
 #include <QVBoxLayout>
@@ -64,7 +65,7 @@ void PatientWidget::initModel()
     if (!Database::instance().isOpen())
         return;
 
-    m_model = new QSqlTableModel(this, Database::instance().db());
+    m_model = new PatientModel(this, Database::instance().db());
     m_model->setTable("patient");
     m_model->setEditStrategy(QSqlTableModel::OnManualSubmit);
 

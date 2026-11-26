@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QString>
+#include <QDate>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -40,6 +41,11 @@ private:
     void gotoPage(PageIndex index, const QString &title);
     void goBack();
     void doLogin();
+    void doAddPatient();
+    void doEditPatient();
+    void doSavePatient();
+    QString nextPatientId() const;
+    static int calcAge(const QDate &dob);
 
     Ui::MainWindow *ui;
     QStackedWidget *m_stack = nullptr;

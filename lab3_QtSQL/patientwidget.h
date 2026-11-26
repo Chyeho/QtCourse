@@ -7,6 +7,7 @@ class QLineEdit;
 class QPushButton;
 class QTableView;
 class QSqlTableModel;
+class PatientModel;
 
 // 患者管理页面（对应实验参考图 3）：查询框 + 操作按钮 + 患者列表
 class PatientWidget : public QWidget
@@ -21,7 +22,7 @@ public:
     QPushButton *deleteButton() const { return m_deleteBtn; }
     QPushButton *editButton() const { return m_editBtn; }
     QTableView *tableView() const { return m_tableView; }
-    QSqlTableModel *model() const { return m_model; }
+    PatientModel *model() const { return m_model; }
 
     // 增删改后重新从数据库加载并刷新列表
     void refresh();
@@ -38,7 +39,7 @@ private:
     QPushButton *m_deleteBtn = nullptr;
     QPushButton *m_editBtn = nullptr;
     QTableView *m_tableView = nullptr;
-    QSqlTableModel *m_model = nullptr;
+    PatientModel *m_model = nullptr;
 };
 
 #endif // PATIENTWIDGET_H

@@ -3,6 +3,7 @@
 #include "loginwidget.h"
 #include "welcomewidget.h"
 #include "patientwidget.h"
+#include "patientmodel.h"
 #include "patienteditwidget.h"
 #include "database.h"
 
@@ -15,8 +16,17 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QLineEdit>
+#include <QComboBox>
+#include <QDateEdit>
+#include <QDoubleSpinBox>
+#include <QTableView>
+#include <QSqlTableModel>
 #include <QSqlQuery>
 #include <QSqlError>
+#include <QSqlRecord>
+#include <QDate>
+#include <QDateTime>
+#include <QRegularExpression>
 
 namespace {
 // 全局样式表：医疗蓝主题，简洁扁平
@@ -271,6 +281,116 @@ void MainWindow::doLogin()
     }
 }
 
+void MainWindow::doAddPatient()
+{
+    m_patientEditPage->clearForm();
+    m_patientEditPage->idEdit()->setText(nextPatientId());
+    gotoPage(PagePatientEdit, "新增患者信息");
+}
+
+void MainWindow::doEditPatient()
+{
+    auto *model = m_patientPage->model();
+    const int row = m_patientPage->tableView()->currentIndex().row();
+    if (!model || row < 0) {
+        QMessageBox::warning(this, "提示", "请先在列表中选择要修改的患者记录");
+        return;
+    }
+
+    const QSqlRecord rec = model->record(row);
+    m_patientEditPage->loadRecord(rec);
+    gotoPage(PagePatientEdit, "修改患者信息");
+}
+
+void MainWindow::doSavePatient()
+{
+    QString error;
+    if (!m_patientEditPage->validate(error)) {
+        QMessageBox::warning(this, "输入有误", error);
+        return;
+    }
+
+    auto *edit = m_patientEditPage;
+    const QString id = edit->idEdit()->text().trimmed();
+    const QString name = edit->nameEdit()->text().trimmed();
+    const QString idCard = edit->idCardEdit()->text().trimmed();
+    const int sex = edit->sexCombo()->currentData().toInt();
+    const QDate dob = edit->dobEdit()->date();
+    const double height = edit->heightSpin()->value();
+    const double weight = edit->weightSpin()->value();
+    const QString mobile = edit->mobileEdit()->text().trimmed();
+    const int age = calcAge(dob);
+    const QString dobStr = dob.toString("yyyy/M/d");
+
+    QSqlQuery query(Database::instance().db());
+    bool ok = false;
+
+    if (edit->isAddMode()) {
+        query.prepare(
+            "INSERT INTO patient "
+            "(ID, ID_CARD, NAME, SEX, DOB, HEIGHT, WEIGHT, MOBILEPHONE, AGE, CREATEDTIMESTAMP) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        query.addBindValue(id);
+        query.addBindValue(idCard);
+        query.addBindValue(name);
+        query.addBindValue(sex);
+        query.addBindValue(dobStr);
+        query.addBindValue(height);
+        query.addBindValue(weight);
+        query.addBindValue(mobile);
+        query.addBindValue(age);
+        query.addBindValue(QDateTime::currentDateTime().toString("yyyy/M/d hh:mm:ss"));
+        ok = query.exec();
+    } else {
+        query.prepare(
+            "UPDATE patient SET ID_CARD = ?, NAME = ?, SEX = ?, DOB = ?, "
+            "HEIGHT = ?, WEIGHT = ?, MOBILEPHONE = ?, AGE = ? WHERE ID = ?");
+        query.addBindValue(idCard);
+        query.addBindValue(name);
+        query.addBindValue(sex);
+        query.addBindValue(dobStr);
+        query.addBindValue(height);
+        query.addBindValue(weight);
+        query.addBindValue(mobile);
+        query.addBindValue(age);
+        query.addBindValue(id);
+        ok = query.exec();
+    }
+
+    if (!ok) {
+        QMessageBox::critical(this, "保存失败", query.lastError().text());
+        return;
+    }
+
+    QMessageBox::information(this, "提示", "患者信息保存成功");
+    m_patientPage->refresh();
+    gotoPage(PagePatient, "患者管理");
+}
+
+QString MainWindow::nextPatientId() const
+{
+    QString next = QStringLiteral("P0001");
+    QSqlQuery query(Database::instance().db());
+    if (query.exec("SELECT MAX(ID) FROM patient") && query.next()
+        && !query.value(0).toString().isEmpty()) {
+        const int n = query.value(0).toString().mid(1).toInt() + 1;
+        next = QString("P%1").arg(n, 4, 10, QChar('0'));
+    }
+    return next;
+}
+
+int MainWindow::calcAge(const QDate &dob)
+{
+    if (!dob.isValid())
+        return 0;
+    const QDate now = QDate::currentDate();
+    int age = now.year() - dob.year();
+    if (now.month() < dob.month()
+        || (now.month() == dob.month() && now.day() < dob.day()))
+        --age;
+    return qMax(age, 0);
+}
+
 void MainWindow::connectSignals()
 {
     // 登录 -> 校验凭据后进入欢迎页
@@ -284,11 +404,10 @@ void MainWindow::connectSignals()
     connect(m_welcomePage->doctorButton(), &QPushButton::clicked, this,
             [this] { QMessageBox::information(this, "提示", "医生管理为选做功能，暂未实现"); });
 
-    // 患者管理 -> 编辑页（新增 / 修改共用表单，具体数据在后续步骤接入）
-    connect(m_patientPage->addButton(), &QPushButton::clicked, this,
-            [this] { gotoPage(PagePatientEdit, "编辑患者信息"); });
-    connect(m_patientPage->editButton(), &QPushButton::clicked, this,
-            [this] { gotoPage(PagePatientEdit, "编辑患者信息"); });
+    // 患者管理 -> 编辑页（新增 / 修改共用表单）
+    connect(m_patientPage->addButton(), &QPushButton::clicked, this, &MainWindow::doAddPatient);
+    connect(m_patientPage->editButton(), &QPushButton::clicked, this, &MainWindow::doEditPatient);
+    connect(m_patientEditPage->saveButton(), &QPushButton::clicked, this, &MainWindow::doSavePatient);
 
     // 编辑页取消 -> 返回患者管理
     connect(m_patientEditPage->cancelButton(), &QPushButton::clicked, this,
