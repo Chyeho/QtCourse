@@ -11,6 +11,116 @@
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QStyle>
+#include <QApplication>
+
+namespace {
+// 全局样式表：医疗蓝主题，简洁扁平
+const char *g_styleSheet = R"(
+QWidget {
+    background-color: #eef3f8;
+    color: #22303c;
+    font-size: 13px;
+}
+
+/* 顶部标题栏 */
+#titleBar {
+    background-color: #2b7cbe;
+}
+#titleBar QLabel {
+    background-color: transparent;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: bold;
+}
+#titleBar QPushButton {
+    background-color: transparent;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    padding: 4px;
+}
+#titleBar QPushButton:hover {
+    background-color: rgba(255, 255, 255, 0.18);
+}
+
+/* 输入控件 */
+QLineEdit, QComboBox, QDateEdit, QDoubleSpinBox, QSpinBox {
+    background-color: #ffffff;
+    border: 1px solid #c9dcec;
+    border-radius: 4px;
+    padding: 5px 8px;
+    min-height: 20px;
+}
+QLineEdit:focus, QComboBox:focus, QDateEdit:focus,
+QDoubleSpinBox:focus, QSpinBox:focus {
+    border: 1px solid #2b7cbe;
+}
+
+/* 普通按钮：白底蓝边蓝字 */
+QPushButton {
+    background-color: #ffffff;
+    color: #2b7cbe;
+    border: 1px solid #2b7cbe;
+    border-radius: 4px;
+    padding: 6px 16px;
+}
+QPushButton:hover { background-color: #e8f2fb; }
+QPushButton:pressed { background-color: #d6e8f6; }
+
+/* 主按钮：蓝底白字 */
+QPushButton[primary="true"] {
+    background-color: #2b7cbe;
+    color: #ffffff;
+    border: 1px solid #2b7cbe;
+}
+QPushButton[primary="true"]:hover { background-color: #1f669e; }
+QPushButton[primary="true"]:pressed { background-color: #1a5a8c; }
+
+/* 欢迎页入口卡片 */
+QPushButton[card="true"] {
+    background-color: #ffffff;
+    color: #22303c;
+    border: 1px solid #c9dcec;
+    border-radius: 10px;
+    font-size: 15px;
+}
+QPushButton[card="true"]:hover {
+    background-color: #e8f2fb;
+    border: 1px solid #2b7cbe;
+    color: #2b7cbe;
+}
+
+/* 白色内容面板（登录 / 编辑表单容器） */
+#cardPanel {
+    background-color: #ffffff;
+    border: 1px solid #dce8f2;
+    border-radius: 10px;
+}
+
+/* 表格 */
+QTableView {
+    background-color: #ffffff;
+    border: 1px solid #c9dcec;
+    border-radius: 4px;
+    gridline-color: #e4edf4;
+    selection-background-color: #d6e8f6;
+    selection-color: #22303c;
+}
+QHeaderView::section {
+    background-color: #2b7cbe;
+    color: #ffffff;
+    border: none;
+    padding: 6px;
+    font-weight: bold;
+}
+
+/* 状态栏 */
+QStatusBar {
+    background-color: #e2ecf4;
+    color: #4a6274;
+}
+)";
+}
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -29,6 +139,7 @@ void MainWindow::setupUi()
 {
     this->resize(800, 600);
     this->setWindowTitle("医院诊疗系统");
+    qApp->setStyleSheet(QString::fromUtf8(g_styleSheet));
 
     auto *central = new QWidget(this);
     this->setCentralWidget(central);
@@ -38,25 +149,25 @@ void MainWindow::setupUi()
     rootLayout->setSpacing(0);
 
     // 顶部标题栏：返回 + 标题 + 全屏
-    auto *titleBar = new QHBoxLayout();
+    auto *titleBarWidget = new QWidget(this);
+    titleBarWidget->setObjectName("titleBar");
+    auto *titleBar = new QHBoxLayout(titleBarWidget);
     titleBar->setContentsMargins(10, 8, 10, 8);
     titleBar->setSpacing(10);
 
-    m_backBtn = new QPushButton("<", this);
+    m_backBtn = new QPushButton("<", titleBarWidget);
     m_backBtn->setFixedWidth(40);
-    m_backBtn->setFlat(true);
 
-    m_titleLabel = new QLabel("登录", this);
+    m_titleLabel = new QLabel("登录", titleBarWidget);
     m_titleLabel->setAlignment(Qt::AlignCenter);
     QFont titleFont = m_titleLabel->font();
     titleFont.setPointSize(12);
     titleFont.setBold(true);
     m_titleLabel->setFont(titleFont);
 
-    m_fullBtn = new QPushButton(this);
+    m_fullBtn = new QPushButton(titleBarWidget);
     m_fullBtn->setIcon(style()->standardIcon(QStyle::SP_TitleBarMaxButton));
     m_fullBtn->setFixedWidth(40);
-    m_fullBtn->setFlat(true);
 
     titleBar->addWidget(m_backBtn);
     titleBar->addStretch();
@@ -64,7 +175,7 @@ void MainWindow::setupUi()
     titleBar->addStretch();
     titleBar->addWidget(m_fullBtn);
 
-    rootLayout->addLayout(titleBar);
+    rootLayout->addWidget(titleBarWidget);
 
     // 页面堆栈
     m_stack = new QStackedWidget(this);
