@@ -8,10 +8,18 @@ CONFIG += c++17
 
 SOURCES += \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    loginwidget.cpp \
+    welcomewidget.cpp \
+    patientwidget.cpp \
+    patienteditwidget.cpp
 
 HEADERS += \
-    mainwindow.h
+    mainwindow.h \
+    loginwidget.h \
+    welcomewidget.h \
+    patientwidget.h \
+    patienteditwidget.h
 
 FORMS += \
     mainwindow.ui

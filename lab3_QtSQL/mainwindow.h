@@ -4,10 +4,16 @@
 #include <QMainWindow>
 
 QT_BEGIN_NAMESPACE
-namespace Ui {
-class MainWindow;
-}
+namespace Ui { class MainWindow; }
+class QStackedWidget;
+class QLabel;
+class QPushButton;
 QT_END_NAMESPACE
+
+class LoginWidget;
+class WelcomeWidget;
+class PatientWidget;
+class PatientEditWidget;
 
 class MainWindow : public QMainWindow
 {
@@ -17,7 +23,27 @@ public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow() override;
 
+    LoginWidget *loginPage() const { return m_loginPage; }
+    WelcomeWidget *welcomePage() const { return m_welcomePage; }
+    PatientWidget *patientPage() const { return m_patientPage; }
+    PatientEditWidget *patientEditPage() const { return m_patientEditPage; }
+
+    QStackedWidget *stack() const { return m_stack; }
+    void setPageTitle(const QString &title);
+
 private:
+    void setupUi();
+
     Ui::MainWindow *ui;
+    QStackedWidget *m_stack = nullptr;
+    QLabel *m_titleLabel = nullptr;
+    QPushButton *m_backBtn = nullptr;
+    QPushButton *m_fullBtn = nullptr;
+
+    LoginWidget *m_loginPage = nullptr;
+    WelcomeWidget *m_welcomePage = nullptr;
+    PatientWidget *m_patientPage = nullptr;
+    PatientEditWidget *m_patientEditPage = nullptr;
 };
+
 #endif // MAINWINDOW_H
