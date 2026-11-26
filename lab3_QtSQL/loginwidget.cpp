@@ -67,6 +67,7 @@ void LoginWidget::setupUi()
     m_registerBtn->setFixedWidth(110);
     m_loginBtn = new QPushButton("登录", panel);
     m_loginBtn->setFixedWidth(110);
+    m_loginBtn->setDefault(true);
     m_loginBtn->setProperty("primary", true);
 
     btnLayout->addWidget(m_registerBtn);

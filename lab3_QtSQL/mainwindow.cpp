@@ -12,6 +12,7 @@
 #include <QHBoxLayout>
 #include <QStyle>
 #include <QApplication>
+#include <QMessageBox>
 
 namespace {
 // 全局样式表：医疗蓝主题，简洁扁平
@@ -193,9 +194,70 @@ void MainWindow::setupUi()
 
     // 状态栏：开发者学号与姓名
     ui->statusbar->showMessage("学号：2024414290206    姓名：程迪宏");
+
+    connectSignals();
 }
 
 void MainWindow::setPageTitle(const QString &title)
 {
     m_titleLabel->setText(title);
+}
+
+void MainWindow::gotoPage(PageIndex index, const QString &title)
+{
+    m_stack->setCurrentIndex(index);
+    setPageTitle(title);
+}
+
+void MainWindow::goBack()
+{
+    switch (m_stack->currentIndex()) {
+    case PagePatientEdit:
+        gotoPage(PagePatient, "患者管理");
+        break;
+    case PagePatient:
+        gotoPage(PageWelcome, "欢迎");
+        break;
+    case PageWelcome:
+        gotoPage(PageLogin, "登录");
+        break;
+    default:
+        break;
+    }
+}
+
+void MainWindow::connectSignals()
+{
+    // 登录 -> 欢迎页（凭据校验在后续步骤接入）
+    connect(m_loginPage->loginButton(), &QPushButton::clicked, this,
+            [this] { gotoPage(PageWelcome, "欢迎"); });
+
+    // 欢迎页入口
+    connect(m_welcomePage->patientButton(), &QPushButton::clicked, this,
+            [this] { gotoPage(PagePatient, "患者管理"); });
+    connect(m_welcomePage->departmentButton(), &QPushButton::clicked, this,
+            [this] { QMessageBox::information(this, "提示", "科室管理为选做功能，暂未实现"); });
+    connect(m_welcomePage->doctorButton(), &QPushButton::clicked, this,
+            [this] { QMessageBox::information(this, "提示", "医生管理为选做功能，暂未实现"); });
+
+    // 患者管理 -> 编辑页（新增 / 修改共用表单，具体数据在后续步骤接入）
+    connect(m_patientPage->addButton(), &QPushButton::clicked, this,
+            [this] { gotoPage(PagePatientEdit, "编辑患者信息"); });
+    connect(m_patientPage->editButton(), &QPushButton::clicked, this,
+            [this] { gotoPage(PagePatientEdit, "编辑患者信息"); });
+
+    // 编辑页取消 -> 返回患者管理
+    connect(m_patientEditPage->cancelButton(), &QPushButton::clicked, this,
+            [this] { gotoPage(PagePatient, "患者管理"); });
+
+    // 标题栏返回
+    connect(m_backBtn, &QPushButton::clicked, this, &MainWindow::goBack);
+
+    // 标题栏全屏 / 还原
+    connect(m_fullBtn, &QPushButton::clicked, this, [this] {
+        if (isFullScreen())
+            showNormal();
+        else
+            showFullScreen();
+    });
 }

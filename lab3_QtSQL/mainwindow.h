@@ -31,8 +31,13 @@ public:
     QStackedWidget *stack() const { return m_stack; }
     void setPageTitle(const QString &title);
 
+    enum PageIndex { PageLogin = 0, PageWelcome = 1, PagePatient = 2, PagePatientEdit = 3 };
+
 private:
     void setupUi();
+    void connectSignals();
+    void gotoPage(PageIndex index, const QString &title);
+    void goBack();
 
     Ui::MainWindow *ui;
     QStackedWidget *m_stack = nullptr;
