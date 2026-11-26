@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QString>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -38,6 +39,7 @@ private:
     void connectSignals();
     void gotoPage(PageIndex index, const QString &title);
     void goBack();
+    void doLogin();
 
     Ui::MainWindow *ui;
     QStackedWidget *m_stack = nullptr;
@@ -49,6 +51,9 @@ private:
     WelcomeWidget *m_welcomePage = nullptr;
     PatientWidget *m_patientPage = nullptr;
     PatientEditWidget *m_patientEditPage = nullptr;
+
+    QString m_currentUserId;
+    QString m_currentUserName;
 };
 
 #endif // MAINWINDOW_H

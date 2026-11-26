@@ -14,6 +14,9 @@
 #include <QStyle>
 #include <QApplication>
 #include <QMessageBox>
+#include <QLineEdit>
+#include <QSqlQuery>
+#include <QSqlError>
 
 namespace {
 // 全局样式表：医疗蓝主题，简洁扁平
@@ -233,11 +236,45 @@ void MainWindow::goBack()
     }
 }
 
+void MainWindow::doLogin()
+{
+    const QString username = m_loginPage->usernameEdit()->text().trimmed();
+    const QString password = m_loginPage->passwordEdit()->text();
+
+    // 必要字段检查
+    if (username.isEmpty() || password.isEmpty()) {
+        QMessageBox::warning(this, "提示", "请输入用户名和密码");
+        return;
+    }
+
+    if (!Database::instance().isOpen()) {
+        QMessageBox::critical(this, "提示", "数据库未连接，无法登录");
+        return;
+    }
+
+    QSqlQuery query(Database::instance().db());
+    query.prepare("SELECT ID, FULLNAME FROM `user` WHERE USERNAME = ? AND PASSWORD = ?");
+    query.addBindValue(username);
+    query.addBindValue(password);
+
+    if (!query.exec()) {
+        QMessageBox::critical(this, "登录失败", "查询出错：\n" + query.lastError().text());
+        return;
+    }
+
+    if (query.next()) {
+        m_currentUserId = query.value("ID").toString();
+        m_currentUserName = query.value("FULLNAME").toString();
+        gotoPage(PageWelcome, "欢迎");
+    } else {
+        QMessageBox::warning(this, "登录失败", "用户名或密码错误");
+    }
+}
+
 void MainWindow::connectSignals()
 {
-    // 登录 -> 欢迎页（凭据校验在后续步骤接入）
-    connect(m_loginPage->loginButton(), &QPushButton::clicked, this,
-            [this] { gotoPage(PageWelcome, "欢迎"); });
+    // 登录 -> 校验凭据后进入欢迎页
+    connect(m_loginPage->loginButton(), &QPushButton::clicked, this, &MainWindow::doLogin);
 
     // 欢迎页入口
     connect(m_welcomePage->patientButton(), &QPushButton::clicked, this,
